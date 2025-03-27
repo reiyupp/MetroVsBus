@@ -59,12 +59,12 @@ else:
 # import matplotlib.pyplot as plt
 
 # # Visualización del grafo del metro
-# nx.draw(G_metro, with_labels=True, node_color='lightblue', node_size=2000, font_size=10, font_weight='bold')
-# plt.title("Grafo del Metro de Medellín")
-# plt.show()
+nx.draw(G_metro, with_labels=True, node_color='lightblue', node_size=2000, font_size=10, font_weight='bold')
+plt.title("Grafo del Metro de Medellín")
+plt.show()
 
-# # Visualización del grafo de las rutas de bus
-# nx.draw(G_buses, with_labels=True, node_color='lightgreen', node_size=2000, font_size=10, font_weight='bold')
-# plt.title("Grafo de las Rutas de Bus")
-# plt.show()
+# Visualización del grafo de las rutas de bus
+nx.draw(G_buses, with_labels=True, node_color='lightgreen', node_size=2000, font_size=10, font_weight='bold')
+plt.title("Grafo de las Rutas de Bus")
+plt.show()
 
