@@ -1,70 +1,58 @@
-import networkx as nx
+# metro_vs_bus_modelo.py
 
-# Grafo del Metro de Medellín
-G_metro = nx.DiGraph()
+# ========================================
+# MÉTODO DE APRENDIZAJE SUPERVISADO: ÁRBOL DE DECISIÓN
+# Comparación entre tiempos de viaje en metro y bus
+# para predecir el medio de transporte recomendado.
+# ========================================
 
-# Estaciones del metro y tiempos de viaje (en minutos)
-G_metro.add_edge('Itagüí', 'Envigado', weight=5)
-G_metro.add_edge('Envigado', 'Ayura', weight=3)
-G_metro.add_edge('Ayura', 'Aguacatala', weight=4)
-G_metro.add_edge('Aguacatala', 'El Poblado', weight=3)
-G_metro.add_edge('El Poblado', 'Itagüí', weight=10)  # Ejemplo de una estación de retorno
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
+# Cargar el dataset desde un archivo CSV
+df = pd.read_csv('rutas_transporte.csv')
 
-# Grafo de rutas de buses
-G_buses = nx.DiGraph()
+# Convertir los textos de origen y destino en números
+le_origen = LabelEncoder()
+le_destino = LabelEncoder()
+df['origen_cod'] = le_origen.fit_transform(df['origen'])
+df['destino_cod'] = le_destino.fit_transform(df['destino'])
 
-# Estaciones de buses y tiempos de viaje (en minutos)
-G_buses.add_edge('Itagüí', 'Envigado', weight=10)  # Tiempo más largo por tráfico
-G_buses.add_edge('Envigado', 'Ayura', weight=15)  # Tráfico pesado
-G_buses.add_edge('Ayura', 'Aguacatala', weight=12)  # Tráfico moderado
-G_buses.add_edge('Aguacatala', 'El Poblado', weight=20)  # Tráfico pesado
-G_buses.add_edge('El Poblado', 'Itagüí', weight=18)  # Tráfico moderado
+# Variables de entrada y salida
+X = df[['origen_cod', 'destino_cod', 'tiempo_metro', 'tiempo_bus']]
+y = df['medio_recomendado']
 
-# Algunas rutas alternativas para buses
-G_buses.add_edge('Itagüí', 'Ayura', weight=25)  # Ruta más larga en bus
-G_buses.add_edge('Envigado', 'Aguacatala', weight=30)  # Ruta de bus en hora pico
+# Dividir en datos de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Función para obtener la mejor ruta en el metro
-def obtener_mejor_ruta_metro(G, origen, destino):
-    return nx.dijkstra_path(G, source=origen, target=destino, weight='weight')
+# Crear y entrenar el modelo
+modelo = DecisionTreeClassifier()
+modelo.fit(X_train, y_train)
 
-# Ejemplo: mejor ruta en el metro de Itagüí a El Poblado
-ruta_metro = obtener_mejor_ruta_metro(G_metro, 'Itagüí', 'El Poblado')
-print("La mejor ruta en el metro de Itagüí a El Poblado es:", ruta_metro)
+# Evaluar el modelo
+y_pred = modelo.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Precisión del modelo: {accuracy:.2f}")
 
-# Función para obtener la mejor ruta en el bus
-def obtener_mejor_ruta_bus(G, origen, destino):
-    return nx.dijkstra_path(G, source=origen, target=destino, weight='weight')
+# ------------------------------------------
+# Caso de ejemplo: ir de 'El Poblado' a 'Itagüí' con tiempos reales
+origen = 'El Poblado'
+destino = 'Itagüí'
+tiempo_metro = 15
+tiempo_bus = 8
 
-# Ejemplo: mejor ruta en bus de Itagüí a El Poblado
-ruta_bus = obtener_mejor_ruta_bus(G_buses, 'Itagüí', 'El Poblado')
-print("La mejor ruta en bus de Itagüí a El Poblado es:", ruta_bus)
+# Codificar origen y destino
+origen_cod = le_origen.transform([origen])[0]
+destino_cod = le_destino.transform([destino])[0]
 
-# Calcular el tiempo total de viaje en el metro
-tiempo_metro = sum(G_metro[u][v]['weight'] for u, v in zip(ruta_metro, ruta_metro[1:]))
-print("Tiempo de viaje en el metro de Itagüí a El Poblado:", tiempo_metro, "minutos")
+# Crear DataFrame con nombres de columnas (evita el warning)
+nueva_ruta_df = pd.DataFrame([[origen_cod, destino_cod, tiempo_metro, tiempo_bus]],
+                              columns=['origen_cod', 'destino_cod', 'tiempo_metro', 'tiempo_bus'])
 
-# Calcular el tiempo total de viaje en el bus
-tiempo_bus = sum(G_buses[u][v]['weight'] for u, v in zip(ruta_bus, ruta_bus[1:]))
-print("Tiempo de viaje en bus de Itagüí a El Poblado:", tiempo_bus, "minutos")
-
-# Comparar los tiempos
-if tiempo_metro < tiempo_bus:
-    print("El metro es más rápido.")
-else:
-    print("El bus es más rápido.")
-
-
-# import matplotlib.pyplot as plt
-
-# # Visualización del grafo del metro
-nx.draw(G_metro, with_labels=True, node_color='lightblue', node_size=2000, font_size=10, font_weight='bold')
-plt.title("Grafo del Metro de Medellín")
-plt.show()
-
-# Visualización del grafo de las rutas de bus
-nx.draw(G_buses, with_labels=True, node_color='lightgreen', node_size=2000, font_size=10, font_weight='bold')
-plt.title("Grafo de las Rutas de Bus")
-plt.show()
+# Predecir el medio recomendado
+prediccion = modelo.predict(nueva_ruta_df)
+print(f"Medio recomendado para ir de {origen} a {destino}: {prediccion[0]}")
 
